@@ -138,23 +138,32 @@ function Admin() {
   );
 }
 
-function DoctorDialog({ onSaved }: { onSaved: () => void }) {
+function DoctorDialog({ onSaved, existing }: { onSaved: () => void; existing?: any }) {
   const [open, setOpen] = useState(false);
-  const [f, setF] = useState({ name: "", specialization: "", hospital: "", city: "", phone: "", email: "" });
+  const empty = { name: "", specialization: "", hospital: "", city: "", phone: "", email: "" };
+  const [f, setF] = useState<any>(existing ?? empty);
+  useEffect(() => { if (open) setF(existing ?? empty); }, [open]);
   const save = async () => {
     if (!f.name || !f.specialization) return toast.error("Name & specialization required");
-    const { error } = await supabase.from("doctors").insert(f);
+    const payload = { name: f.name, specialization: f.specialization, hospital: f.hospital, city: f.city, phone: f.phone, email: f.email };
+    const { error } = existing
+      ? await supabase.from("doctors").update(payload).eq("id", existing.id)
+      : await supabase.from("doctors").insert(payload);
     if (error) toast.error(error.message);
-    else { toast.success("Doctor added"); setOpen(false); setF({ name: "", specialization: "", hospital: "", city: "", phone: "", email: "" }); onSaved(); }
+    else { toast.success(existing ? "Doctor updated" : "Doctor added"); setOpen(false); onSaved(); }
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button size="sm" className="gap-1"><Plus className="size-4" /> Add doctor</Button></DialogTrigger>
+      <DialogTrigger asChild>
+        {existing
+          ? <Button variant="ghost" size="icon"><Pencil className="size-4" /></Button>
+          : <Button size="sm" className="gap-1"><Plus className="size-4" /> Add doctor</Button>}
+      </DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>Add doctor</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{existing ? "Edit doctor" : "Add doctor"}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           {[["name","Name"],["specialization","Specialization"],["hospital","Hospital"],["city","City"],["phone","Phone"],["email","Email"]].map(([k, lbl]) => (
-            <div key={k} className="space-y-1"><Label>{lbl}</Label><Input value={(f as any)[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></div>
+            <div key={k} className="space-y-1"><Label>{lbl}</Label><Input value={(f as any)[k] ?? ""} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></div>
           ))}
         </div>
         <DialogFooter><Button onClick={save}>Save</Button></DialogFooter>

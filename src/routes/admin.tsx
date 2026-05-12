@@ -81,12 +81,18 @@ function Admin() {
                   <div>
                     <div className="font-medium">{d.name}</div>
                     <div className="text-xs text-muted-foreground">{d.specialization} · {d.hospital} · {d.city}</div>
+                    {(d.phone || d.email) && (
+                      <div className="text-xs text-muted-foreground">{d.phone}{d.phone && d.email ? " · " : ""}{d.email}</div>
+                    )}
                   </div>
-                  <Button variant="ghost" size="icon" onClick={async () => {
-                    if (!confirm("Delete?")) return;
-                    await supabase.from("doctors").delete().eq("id", d.id);
-                    toast.success("Deleted"); load();
-                  }}><Trash2 className="size-4 text-destructive" /></Button>
+                  <div className="flex items-center gap-1">
+                    <DoctorDialog onSaved={load} existing={d} />
+                    <Button variant="ghost" size="icon" onClick={async () => {
+                      if (!confirm("Delete?")) return;
+                      await supabase.from("doctors").delete().eq("id", d.id);
+                      toast.success("Deleted"); load();
+                    }}><Trash2 className="size-4 text-destructive" /></Button>
+                  </div>
                 </div>
               ))}
             </div>

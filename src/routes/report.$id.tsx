@@ -27,11 +27,8 @@ function ReportPage() {
         const { data: docs } = await supabase.from("doctors").select("*").ilike("specialization", `%${data.specialist.split(" ")[0]}%`).limit(4);
         setDoctors(docs ?? []);
       }
-      if (data?.conditions?.[0]?.name) {
-        const cat = data.conditions[0].name;
-        const { data: m } = await supabase.from("medicines").select("*").limit(6);
-        setMeds(m ?? []);
-      }
+      const { data: m } = await supabase.from("medicines").select("*").limit(6);
+      setMeds(m ?? []);
       setLoading(false);
     })();
   }, [id]);

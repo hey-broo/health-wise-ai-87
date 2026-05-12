@@ -23,9 +23,39 @@ function ReportPage() {
     (async () => {
       const { data } = await supabase.from("symptom_reports").select("*").eq("id", id).maybeSingle();
       setReport(data);
-      if (data?.specialist) {
-        const { data: docs } = await supabase.from("doctors").select("*").ilike("specialization", `%${data.specialist.split(" ")[0]}%`).limit(4);
-        setDoctors(docs ?? []);
+      if (data) {
+        const { data: allDocs } = await supabase.from("doctors").select("*");
+        const docs = allDocs ?? [];
+        const specialist = (data.specialist || "").toLowerCase();
+        const symptoms = (data.symptoms || "").toLowerCase();
+        const conditionNames = ((data.conditions as any[]) || []).map(c => (c.name || "").toLowerCase()).join(" ");
+        const haystack = `${specialist} ${symptoms} ${conditionNames}`;
+
+        const scored = docs
+          .map(d => {
+            const spec = (d.specialization || "").toLowerCase();
+            let score = 0;
+            // word-level match between specialist tokens and doctor specialization
+            for (const word of spec.split(/[\s,/-]+/).filter(w => w.length > 2)) {
+              if (haystack.includes(word)) score += 2;
+            }
+            // also the inverse: if specialist text contains specialization
+            if (spec && haystack.includes(spec)) score += 3;
+            return { d, score };
+          })
+          .filter(x => x.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .map(x => x.d);
+
+        let matched = scored.slice(0, 4);
+        if (matched.length === 0) {
+          // fallback: general physician / MBBS
+          matched = docs.filter(d => {
+            const s = (d.specialization || "").toLowerCase();
+            return s.includes("general") || s.includes("mbbs") || s.includes("physician") || s.includes("family");
+          }).slice(0, 4);
+        }
+        setDoctors(matched);
       }
       setLoading(false);
     })();

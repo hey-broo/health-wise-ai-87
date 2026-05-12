@@ -27,8 +27,6 @@ function ReportPage() {
         const { data: docs } = await supabase.from("doctors").select("*").ilike("specialization", `%${data.specialist.split(" ")[0]}%`).limit(4);
         setDoctors(docs ?? []);
       }
-      const { data: m } = await supabase.from("medicines").select("*").limit(6);
-      setMeds(m ?? []);
       setLoading(false);
     })();
   }, [id]);

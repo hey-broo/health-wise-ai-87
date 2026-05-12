@@ -16,7 +16,7 @@ function ReportPage() {
   const { id } = useParams({ from: "/report/$id" });
   const [report, setReport] = useState<any>(null);
   const [doctors, setDoctors] = useState<any[]>([]);
-  const [meds, setMeds] = useState<any[]>([]);
+  const [, setMeds] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

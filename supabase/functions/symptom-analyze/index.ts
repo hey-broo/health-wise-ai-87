@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const systemPrompt = `You are a medical AI assistant. Analyze the user's symptoms and provide structured health insights. Always include a disclaimer to consult a real doctor. Never diagnose definitively.`;
+    const systemPrompt = `You are a medical AI assistant. Analyze the user's symptoms and provide structured health insights. Always include a disclaimer to consult a real doctor. Never diagnose definitively. IMPORTANT: Respond in ENGLISH ONLY. All field values (condition names, explanations, precautions, specialist, medicine names/purposes, advice) MUST be in English regardless of the language used in the input symptoms. For the 'specialist' field, return a single concise specialty name (e.g. "Dentist", "Cardiologist", "General Physician", "Dermatologist") — do not return a sentence.`;
     const userPrompt = `Patient: ${age}yo ${gender}. Symptoms: ${symptoms}. Duration: ${duration}. Severity: ${severity}.\n\nProvide health insights via the analyze_symptoms tool.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

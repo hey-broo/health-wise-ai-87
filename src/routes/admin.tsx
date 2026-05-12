@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Shield, Users, Stethoscope, Pill, FileClock, Plus, Trash2 } from "lucide-react";
+import { Shield, Users, Stethoscope, Pill, FileClock, Plus, Trash2, Pencil } from "lucide-react";
 import { format } from "date-fns";
 
 export const Route = createFileRoute("/admin")({

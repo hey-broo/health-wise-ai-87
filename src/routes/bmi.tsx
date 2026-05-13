@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -7,9 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Calculator } from "lucide-react";
 
-export const Route = createFileRoute("/bmi")({
-  component: () => <RequireAuth><BMI /></RequireAuth>,
-});
+export default function BMIPage() {
+  return <RequireAuth><BMI /></RequireAuth>;
+}
 
 function BMI() {
   const [h, setH] = useState("170");

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -10,9 +10,9 @@ import { format } from "date-fns";
 import { Search, FileClock, ArrowRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/history")({
-  component: () => <RequireAuth><History /></RequireAuth>,
-});
+export default function HistoryPage() {
+  return <RequireAuth><History /></RequireAuth>;
+}
 
 function History() {
   const { user } = useAuth();
@@ -66,7 +66,7 @@ function History() {
         <div className="space-y-2">
           {filtered.map((r) => (
             <Card key={r.id} className="p-4 flex items-center gap-3 hover:shadow-card transition-shadow">
-              <Link to="/report/$id" params={{ id: r.id }} className="flex-1 min-w-0">
+              <Link to={`/report/${r.id}`} className="flex-1 min-w-0">
                 <div className="font-medium truncate">{r.symptoms}</div>
                 <div className="text-xs text-muted-foreground">
                   {r.specialist} · {r.severity} · {format(new Date(r.created_at), "PPp")}
@@ -75,7 +75,7 @@ function History() {
               <Button variant="ghost" size="icon" onClick={() => del(r.id)}>
                 <Trash2 className="size-4 text-destructive" />
               </Button>
-              <Link to="/report/$id" params={{ id: r.id }}>
+              <Link to={`/report/${r.id}`}>
                 <Button variant="ghost" size="icon"><ArrowRight className="size-4" /></Button>
               </Link>
             </Card>

@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -11,9 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { UserCircle } from "lucide-react";
 
-export const Route = createFileRoute("/profile")({
-  component: () => <RequireAuth><Profile /></RequireAuth>,
-});
+export default function ProfilePage() {
+  return <RequireAuth><Profile /></RequireAuth>;
+}
 
 function Profile() {
   const { user, isAdmin } = useAuth();

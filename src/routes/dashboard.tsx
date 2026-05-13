@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Stethoscope, FileClock, Calculator, Activity, ArrowRight, ClipboardList } from "lucide-react";
 import { format } from "date-fns";
 
-export const Route = createFileRoute("/dashboard")({
-  component: () => <RequireAuth><Dashboard /></RequireAuth>,
-});
+export default function DashboardPage() {
+  return <RequireAuth><Dashboard /></RequireAuth>;
+}
 
 function Dashboard() {
   const { user } = useAuth();
@@ -82,7 +82,7 @@ function Dashboard() {
         ) : (
           <div className="space-y-2">
             {reports.map((r) => (
-              <Link key={r.id} to="/report/$id" params={{ id: r.id }}
+              <Link key={r.id} to={`/report/${r.id}`}
                 className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted transition-colors">
                 <div className="min-w-0">
                   <div className="font-medium truncate">{r.symptoms}</div>

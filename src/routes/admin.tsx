@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,9 +12,9 @@ import { toast } from "sonner";
 import { Shield, Users, Stethoscope, Pill, FileClock, Plus, Trash2, Pencil } from "lucide-react";
 import { format } from "date-fns";
 
-export const Route = createFileRoute("/admin")({
-  component: () => <RequireAuth adminOnly><Admin /></RequireAuth>,
-});
+export default function AdminPage() {
+  return <RequireAuth adminOnly><Admin /></RequireAuth>;
+}
 
 function Admin() {
   const [stats, setStats] = useState({ users: 0, reports: 0, doctors: 0, meds: 0 });

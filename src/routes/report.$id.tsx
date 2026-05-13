@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { Link, useParams } from "react-router-dom";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,18 +8,18 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ArrowLeft, FileText, Pill, UserRound, ShieldAlert, Lightbulb } from "lucide-react";
 
-export const Route = createFileRoute("/report/$id")({
-  component: () => <RequireAuth><ReportPage /></RequireAuth>,
-});
+export default function ReportRoute() {
+  return <RequireAuth><ReportPage /></RequireAuth>;
+}
 
 function ReportPage() {
-  const { id } = useParams({ from: "/report/$id" });
+  const { id } = useParams<{ id: string }>();
   const [report, setReport] = useState<any>(null);
   const [doctors, setDoctors] = useState<any[]>([]);
-  
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!id) return;
     (async () => {
       const { data } = await supabase.from("symptom_reports").select("*").eq("id", id).maybeSingle();
       setReport(data);
@@ -35,11 +35,9 @@ function ReportPage() {
           .map(d => {
             const spec = (d.specialization || "").toLowerCase();
             let score = 0;
-            // word-level match between specialist tokens and doctor specialization
             for (const word of spec.split(/[\s,/-]+/).filter(w => w.length > 2)) {
               if (haystack.includes(word)) score += 2;
             }
-            // also the inverse: if specialist text contains specialization
             if (spec && haystack.includes(spec)) score += 3;
             return { d, score };
           })
@@ -49,7 +47,6 @@ function ReportPage() {
 
         let matched = scored.slice(0, 4);
         if (matched.length === 0) {
-          // fallback: general physician / MBBS
           matched = docs.filter(d => {
             const s = (d.specialization || "").toLowerCase();
             return s.includes("general") || s.includes("mbbs") || s.includes("physician") || s.includes("family");
@@ -90,7 +87,6 @@ function ReportPage() {
         </div>
       </Card>
 
-      {/* Conditions */}
       <Card className="p-6 shadow-card">
         <h2 className="font-semibold text-lg mb-3">Possible conditions</h2>
         <div className="space-y-3">

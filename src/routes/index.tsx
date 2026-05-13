@@ -1,15 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { HeartPulse, Stethoscope, FileText, Activity, ShieldCheck, Sparkles } from "lucide-react";
 
-export const Route = createFileRoute("/")({
-  component: Landing,
-});
-
-function Landing() {
+export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Nav */}
       <header className="border-b border-border bg-card/70 backdrop-blur sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
@@ -25,7 +20,6 @@ function Landing() {
         </div>
       </header>
 
-      {/* Hero */}
       <section className="gradient-soft">
         <div className="max-w-6xl mx-auto px-6 py-20 lg:py-28 grid lg:grid-cols-2 gap-12 items-center">
           <div>
@@ -80,7 +74,6 @@ function Landing() {
         </div>
       </section>
 
-      {/* Features */}
       <section className="max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-3 gap-6">
         {[
           { icon: Stethoscope, title: "AI Symptom Checker", desc: "Structured analysis from a powerful medical-aware LLM." },

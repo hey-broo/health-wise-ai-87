@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "react-router-dom";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -10,12 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Stethoscope, Sparkles, AlertTriangle } from "lucide-react";
+import { Stethoscope, AlertTriangle } from "lucide-react";
 import { z } from "zod";
-
-export const Route = createFileRoute("/symptom-checker")({
-  component: () => <RequireAuth><SymptomChecker /></RequireAuth>,
-});
 
 const schema = z.object({
   symptoms: z.string().trim().min(5, "Describe your symptoms (min 5 chars)").max(2000),
@@ -24,6 +20,10 @@ const schema = z.object({
   duration: z.string().min(1),
   severity: z.string().min(1),
 });
+
+export default function SymptomCheckerPage() {
+  return <RequireAuth><SymptomChecker /></RequireAuth>;
+}
 
 function SymptomChecker() {
   const navigate = useNavigate();
@@ -64,7 +64,7 @@ function SymptomChecker() {
       }).select().single();
       if (insErr) throw insErr;
       toast.success("Analysis complete");
-      navigate({ to: "/report/$id", params: { id: inserted.id } });
+      navigate(`/report/${inserted.id}`);
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Analysis failed. Please try again.");
@@ -135,12 +135,8 @@ function SymptomChecker() {
               </Select>
             </div>
           </div>
-          <Button type="submit" disabled={loading} size="lg" className="w-full gap-2">
-            {loading ? (
-              <><div className="size-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" /> Analyzing…</>
-            ) : (
-              <><Sparkles className="size-4" /> Analyze symptoms</>
-            )}
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Analyzing…" : "Analyze symptoms"}
           </Button>
         </form>
       </Card>

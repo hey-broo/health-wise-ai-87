@@ -1,4 +1,4 @@
-import { Link, useLocation, useRouter } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,18 +18,17 @@ const navItems = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
-    router.navigate({ to: "/login" });
+    navigate("/login");
   };
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Sidebar */}
       <aside className={cn(
         "fixed lg:static inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform lg:translate-x-0",
         open ? "translate-x-0" : "-translate-x-full"
@@ -90,11 +89,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Overlay mobile */}
       {open && <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={() => setOpen(false)} />}
 
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Topbar */}
         <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 lg:px-8">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(!open)}>

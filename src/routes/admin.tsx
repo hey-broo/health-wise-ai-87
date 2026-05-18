@@ -1,6 +1,7 @@
 import { RequireAuth } from "@/components/RequireAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { doctorsStore, medicinesStore, type Doctor, type Medicine } from "@/data/store";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -18,21 +19,21 @@ export default function AdminPage() {
 
 function Admin() {
   const [stats, setStats] = useState({ users: 0, reports: 0, doctors: 0, meds: 0 });
-  const [doctors, setDoctors] = useState<any[]>([]);
-  const [meds, setMeds] = useState<any[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [meds, setMeds] = useState<Medicine[]>([]);
   const [reports, setReports] = useState<any[]>([]);
 
   const load = async () => {
-    const [u, r, d, m, rep] = await Promise.all([
+    const [u, r, rep] = await Promise.all([
       supabase.from("profiles").select("*", { count: "exact", head: true }),
       supabase.from("symptom_reports").select("*", { count: "exact", head: true }),
-      supabase.from("doctors").select("*").order("created_at", { ascending: false }),
-      supabase.from("medicines").select("*").order("created_at", { ascending: false }),
       supabase.from("symptom_reports").select("*").order("created_at", { ascending: false }).limit(20),
     ]);
-    setStats({ users: u.count ?? 0, reports: r.count ?? 0, doctors: d.data?.length ?? 0, meds: m.data?.length ?? 0 });
-    setDoctors(d.data ?? []);
-    setMeds(m.data ?? []);
+    const docList = doctorsStore.list();
+    const medList = medicinesStore.list();
+    setStats({ users: u.count ?? 0, reports: r.count ?? 0, doctors: docList.length, meds: medList.length });
+    setDoctors(docList);
+    setMeds(medList);
     setReports(rep.data ?? []);
   };
 
@@ -43,6 +44,7 @@ function Admin() {
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-2"><Shield className="size-7 text-primary" /> Admin Panel</h1>
         <p className="text-muted-foreground">Manage users, doctors, medicines, and reports.</p>
+        <p className="text-xs text-muted-foreground mt-1">Doctors & medicines are stored locally in <code>src/data/*.json</code> (seed) and your browser. Changes persist on this device only.</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -86,9 +88,9 @@ function Admin() {
                   </div>
                   <div className="flex items-center gap-1">
                     <DoctorDialog onSaved={load} existing={d} />
-                    <Button variant="ghost" size="icon" onClick={async () => {
+                    <Button variant="ghost" size="icon" onClick={() => {
                       if (!confirm("Delete?")) return;
-                      await supabase.from("doctors").delete().eq("id", d.id);
+                      doctorsStore.remove(d.id);
                       toast.success("Deleted"); load();
                     }}><Trash2 className="size-4 text-destructive" /></Button>
                   </div>
@@ -108,9 +110,9 @@ function Admin() {
                     <div className="font-medium">{m.name} <span className="text-xs text-muted-foreground">· {m.condition_category}</span></div>
                     <div className="text-xs text-muted-foreground">{m.description} {m.dosage && `· ${m.dosage}`}</div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={async () => {
+                  <Button variant="ghost" size="icon" onClick={() => {
                     if (!confirm("Delete?")) return;
-                    await supabase.from("medicines").delete().eq("id", m.id);
+                    medicinesStore.remove(m.id);
                     toast.success("Deleted"); load();
                   }}><Trash2 className="size-4 text-destructive" /></Button>
                 </div>
@@ -137,19 +139,18 @@ function Admin() {
   );
 }
 
-function DoctorDialog({ onSaved, existing }: { onSaved: () => void; existing?: any }) {
+function DoctorDialog({ onSaved, existing }: { onSaved: () => void; existing?: Doctor }) {
   const [open, setOpen] = useState(false);
   const empty = { name: "", specialization: "", hospital: "", city: "", phone: "", email: "" };
   const [f, setF] = useState<any>(existing ?? empty);
   useEffect(() => { if (open) setF(existing ?? empty); }, [open]);
-  const save = async () => {
+  const save = () => {
     if (!f.name || !f.specialization) return toast.error("Name & specialization required");
     const payload = { name: f.name, specialization: f.specialization, hospital: f.hospital, city: f.city, phone: f.phone, email: f.email };
-    const { error } = existing
-      ? await supabase.from("doctors").update(payload).eq("id", existing.id)
-      : await supabase.from("doctors").insert(payload);
-    if (error) toast.error(error.message);
-    else { toast.success(existing ? "Doctor updated" : "Doctor added"); setOpen(false); onSaved(); }
+    if (existing) doctorsStore.update(existing.id, payload);
+    else doctorsStore.add(payload);
+    toast.success(existing ? "Doctor updated" : "Doctor added");
+    setOpen(false); onSaved();
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -174,11 +175,11 @@ function DoctorDialog({ onSaved, existing }: { onSaved: () => void; existing?: a
 function MedDialog({ onSaved }: { onSaved: () => void }) {
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({ name: "", condition_category: "", description: "", dosage: "" });
-  const save = async () => {
+  const save = () => {
     if (!f.name || !f.condition_category) return toast.error("Name & category required");
-    const { error } = await supabase.from("medicines").insert(f);
-    if (error) toast.error(error.message);
-    else { toast.success("Medicine added"); setOpen(false); setF({ name: "", condition_category: "", description: "", dosage: "" }); onSaved(); }
+    medicinesStore.add(f);
+    toast.success("Medicine added");
+    setOpen(false); setF({ name: "", condition_category: "", description: "", dosage: "" }); onSaved();
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>

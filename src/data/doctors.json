@@ -1,0 +1,20 @@
+[
+  {
+    "id": "f7afdf3b-844a-4aa1-8efc-8ffa0d3d1f0a",
+    "name": "shek",
+    "specialization": "dentist",
+    "hospital": "ku",
+    "city": "bellary",
+    "phone": "1231231231",
+    "email": "nzv@d.com"
+  },
+  {
+    "id": "23cc120a-fce0-455e-ac7c-b8c34e194d22",
+    "name": "nz",
+    "specialization": "MBBS",
+    "hospital": "kuu",
+    "city": "sgp",
+    "phone": "1231231231",
+    "email": "as@12.com"
+  }
+]

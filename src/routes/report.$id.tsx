@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { doctorsStore, type Doctor } from "@/data/store";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ export default function ReportRoute() {
 function ReportPage() {
   const { id } = useParams<{ id: string }>();
   const [report, setReport] = useState<any>(null);
-  const [doctors, setDoctors] = useState<any[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,8 +25,7 @@ function ReportPage() {
       const { data } = await supabase.from("symptom_reports").select("*").eq("id", id).maybeSingle();
       setReport(data);
       if (data) {
-        const { data: allDocs } = await supabase.from("doctors").select("*");
-        const docs = allDocs ?? [];
+        const docs = doctorsStore.list();
         const specialist = (data.specialist || "").toLowerCase();
         const symptoms = (data.symptoms || "").toLowerCase();
         const conditionNames = ((data.conditions as any[]) || []).map(c => (c.name || "").toLowerCase()).join(" ");

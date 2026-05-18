@@ -1,6 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +17,7 @@ const schema = z.object({
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signUp } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,16 +30,10 @@ export default function RegisterPage() {
     const parsed = schema.safeParse({ fullName, email, password });
     if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email, password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: { full_name: fullName },
-      },
-    });
+    const { error } = await signUp(fullName, email, password);
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Account created! You can sign in now.");
+    if (error) { toast.error(error); return; }
+    toast.success("Account created!");
     navigate("/dashboard");
   };
 

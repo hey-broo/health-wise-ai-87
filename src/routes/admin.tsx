@@ -1,7 +1,6 @@
 import { RequireAuth } from "@/components/RequireAuth";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { doctorsStore, medicinesStore, type Doctor, type Medicine } from "@/data/store";
+import { doctorsStore, medicinesStore, usersStore, reportsStore, type Doctor, type Medicine, type StoredUser, type StoredReport } from "@/data/store";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -18,33 +17,28 @@ export default function AdminPage() {
 }
 
 function Admin() {
-  const [stats, setStats] = useState({ users: 0, reports: 0, doctors: 0, meds: 0 });
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [meds, setMeds] = useState<Medicine[]>([]);
-  const [reports, setReports] = useState<any[]>([]);
+  const [users, setUsers] = useState<StoredUser[]>([]);
+  const [reports, setReports] = useState<StoredReport[]>([]);
 
-  const load = async () => {
-    const [u, r, rep] = await Promise.all([
-      supabase.from("profiles").select("*", { count: "exact", head: true }),
-      supabase.from("symptom_reports").select("*", { count: "exact", head: true }),
-      supabase.from("symptom_reports").select("*").order("created_at", { ascending: false }).limit(20),
-    ]);
-    const docList = doctorsStore.list();
-    const medList = medicinesStore.list();
-    setStats({ users: u.count ?? 0, reports: r.count ?? 0, doctors: docList.length, meds: medList.length });
-    setDoctors(docList);
-    setMeds(medList);
-    setReports(rep.data ?? []);
+  const load = () => {
+    setDoctors(doctorsStore.list());
+    setMeds(medicinesStore.list());
+    setUsers(usersStore.list());
+    setReports(reportsStore.list().slice(0, 20));
   };
 
   useEffect(() => { load(); }, []);
+
+  const stats = { users: users.length, reports: reportsStore.list().length, doctors: doctors.length, meds: meds.length };
 
   return (
     <div className="max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-2"><Shield className="size-7 text-primary" /> Admin Panel</h1>
         <p className="text-muted-foreground">Manage users, doctors, medicines, and reports.</p>
-        <p className="text-xs text-muted-foreground mt-1">Doctors & medicines are stored locally in <code>src/data/*.json</code> (seed) and your browser. Changes persist on this device only.</p>
+        <p className="text-xs text-muted-foreground mt-1">All data (users, doctors, medicines, reports) is stored in <code>src/data/*.json</code> as seed and mirrored to this browser's localStorage. Changes persist on this device only.</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -70,8 +64,26 @@ function Admin() {
         <TabsList>
           <TabsTrigger value="doctors">Doctors</TabsTrigger>
           <TabsTrigger value="meds">Medicines</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="reports">Recent reports</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="users">
+          <Card className="p-4 shadow-card">
+            <div className="space-y-2">
+              {users.map((u) => (
+                <div key={u.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                  <div>
+                    <div className="font-medium">{u.fullName} <span className="text-xs text-muted-foreground">· {u.email}</span></div>
+                    <div className="text-xs text-muted-foreground">role: {u.role} · joined {format(new Date(u.createdAt), "PP")}</div>
+                  </div>
+                </div>
+              ))}
+              {users.length === 0 && <p className="text-sm text-muted-foreground p-2">No users yet.</p>}
+            </div>
+          </Card>
+        </TabsContent>
+
 
         <TabsContent value="doctors" className="space-y-3">
           <DoctorDialog onSaved={load} />

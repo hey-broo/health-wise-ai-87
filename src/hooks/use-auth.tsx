@@ -1,57 +1,77 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+import { usersStore, hashPassword, SESSION_KEY, type StoredUser } from "@/data/store";
+
+type SessionUser = Omit<StoredUser, "passwordHash">;
 
 interface AuthContextValue {
-  user: User | null;
-  session: Session | null;
+  user: SessionUser | null;
   loading: boolean;
   isAdmin: boolean;
+  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signUp: (fullName: string, email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
+  updateProfile: (patch: Partial<Pick<StoredUser, "fullName" | "age" | "gender">>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+function strip(u: StoredUser): SessionUser {
+  const { passwordHash, ...rest } = u;
+  return rest;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      if (sess?.user) {
-        setTimeout(async () => {
-          const { data } = await supabase.from("user_roles").select("role").eq("user_id", sess.user.id);
-          setIsAdmin(!!data?.some(r => r.role === "admin"));
-        }, 0);
-      } else {
-        setIsAdmin(false);
-      }
-    });
-
-    supabase.auth.getSession().then(({ data: { session: sess } }) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      setLoading(false);
-      if (sess?.user) {
-        supabase.from("user_roles").select("role").eq("user_id", sess.user.id).then(({ data }) => {
-          setIsAdmin(!!data?.some(r => r.role === "admin"));
-        });
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    const raw = typeof window !== "undefined" ? localStorage.getItem(SESSION_KEY) : null;
+    if (raw) {
+      try {
+        const { userId } = JSON.parse(raw);
+        const u = usersStore.findById(userId);
+        if (u) setUser(strip(u));
+      } catch { /* ignore */ }
+    }
+    setLoading(false);
   }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
+  const signIn = useCallback(async (email: string, password: string) => {
+    const u = usersStore.findByEmail(email);
+    if (!u) return { error: "Invalid email or password" };
+    const hash = await hashPassword(password);
+    if (hash !== u.passwordHash) return { error: "Invalid email or password" };
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: u.id }));
+    setUser(strip(u));
+    return {};
+  }, []);
+
+  const signUp = useCallback(async (fullName: string, email: string, password: string) => {
+    if (usersStore.findByEmail(email)) return { error: "Email already registered" };
+    const passwordHash = await hashPassword(password);
+    const u = usersStore.add({
+      email, fullName, age: null, gender: "Other",
+      passwordHash, role: "user",
+    });
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: u.id }));
+    setUser(strip(u));
+    return {};
+  }, []);
+
+  const signOut = useCallback(async () => {
+    localStorage.removeItem(SESSION_KEY);
+    setUser(null);
+  }, []);
+
+  const updateProfile = useCallback((patch: Partial<Pick<StoredUser, "fullName" | "age" | "gender">>) => {
+    if (!user) return;
+    usersStore.update(user.id, patch);
+    const u = usersStore.findById(user.id);
+    if (u) setUser(strip(u));
+  }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, signOut }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin: user?.role === "admin", signIn, signUp, signOut, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

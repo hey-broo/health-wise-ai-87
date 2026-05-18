@@ -1,7 +1,6 @@
 import { RequireAuth } from "@/components/RequireAuth";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,34 +14,21 @@ export default function ProfilePage() {
 }
 
 function Profile() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, updateProfile } = useAuth();
   const [fullName, setFullName] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("Male");
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
-      if (data) {
-        setFullName(data.full_name ?? "");
-        setAge(data.age ? String(data.age) : "");
-        setGender(data.gender ?? "Male");
-      }
-    });
+    setFullName(user.fullName ?? "");
+    setAge(user.age ? String(user.age) : "");
+    setGender(user.gender ?? "Male");
   }, [user]);
 
-  const save = async () => {
-    if (!user) return;
-    setLoading(true);
-    const { error } = await supabase.from("profiles").upsert({
-      id: user.id, email: user.email, full_name: fullName,
-      age: age ? Number(age) : null, gender,
-      updated_at: new Date().toISOString(),
-    });
-    setLoading(false);
-    if (error) toast.error(error.message);
-    else toast.success("Profile saved");
+  const save = () => {
+    updateProfile({ fullName, age: age ? Number(age) : null, gender });
+    toast.success("Profile saved");
   };
 
   return (
@@ -78,9 +64,7 @@ function Profile() {
             </Select>
           </div>
         </div>
-        <Button onClick={save} disabled={loading} className="w-full">
-          {loading ? "Saving…" : "Save changes"}
-        </Button>
+        <Button onClick={save} className="w-full">Save changes</Button>
         {isAdmin && <div className="text-xs text-success font-medium">★ Admin account</div>}
       </Card>
     </div>

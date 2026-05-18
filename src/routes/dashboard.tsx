@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { reportsStore, type StoredReport } from "@/data/store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Stethoscope, FileClock, Calculator, Activity, ArrowRight, ClipboardList } from "lucide-react";
@@ -14,15 +14,15 @@ export default function DashboardPage() {
 
 function Dashboard() {
   const { user } = useAuth();
-  const [reports, setReports] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
+  const [reports, setReports] = useState<StoredReport[]>([]);
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("symptom_reports").select("*", { count: "exact" })
-      .eq("user_id", user.id).order("created_at", { ascending: false }).limit(5)
-      .then(({ data, count }) => { setReports(data ?? []); setTotal(count ?? 0); });
+    setReports(reportsStore.listByUser(user.id));
   }, [user]);
+
+  const total = reports.length;
+  const recent = reports.slice(0, 5);
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -74,14 +74,14 @@ function Dashboard() {
           <h2 className="font-semibold text-lg flex items-center gap-2"><FileClock className="size-4 text-primary" /> Recent reports</h2>
           <Link to="/history"><Button variant="ghost" size="sm">View all</Button></Link>
         </div>
-        {reports.length === 0 ? (
+        {recent.length === 0 ? (
           <div className="text-center py-10 text-muted-foreground">
             No reports yet.{" "}
             <Link to="/symptom-checker" className="text-primary font-medium hover:underline">Run your first analysis</Link>.
           </div>
         ) : (
           <div className="space-y-2">
-            {reports.map((r) => (
+            {recent.map((r) => (
               <Link key={r.id} to={`/report/${r.id}`}
                 className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted transition-colors">
                 <div className="min-w-0">

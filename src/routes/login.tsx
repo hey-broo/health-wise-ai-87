@@ -1,6 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +16,7 @@ const schema = z.object({
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,9 +28,9 @@ export default function LoginPage() {
     const parsed = schema.safeParse({ email, password });
     if (!parsed.success) { toast.error(parsed.error.issues[0].message); return; }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await signIn(email, password);
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(error); return; }
     toast.success("Welcome back!");
     navigate("/dashboard");
   };

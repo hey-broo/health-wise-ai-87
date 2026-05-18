@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
+import { reportsStore, type StoredReport } from "@/data/store";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,15 +16,14 @@ export default function HistoryPage() {
 
 function History() {
   const { user } = useAuth();
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<StoredReport[]>([]);
   const [search, setSearch] = useState("");
   const [sortAsc, setSortAsc] = useState(false);
 
-  const load = async () => {
+  const load = () => {
     if (!user) return;
-    const { data } = await supabase.from("symptom_reports").select("*")
-      .eq("user_id", user.id).order("created_at", { ascending: sortAsc });
-    setReports(data ?? []);
+    const list = reportsStore.listByUser(user.id);
+    setReports(sortAsc ? [...list].reverse() : list);
   };
 
   useEffect(() => { load(); }, [user, sortAsc]);
@@ -34,11 +33,10 @@ function History() {
     r.specialist?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const del = async (id: string) => {
+  const del = (id: string) => {
     if (!confirm("Delete this report?")) return;
-    const { error } = await supabase.from("symptom_reports").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success("Deleted"); load(); }
+    reportsStore.remove(id);
+    toast.success("Deleted"); load();
   };
 
   return (

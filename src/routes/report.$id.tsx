@@ -1,8 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { doctorsStore, type Doctor } from "@/data/store";
+import { doctorsStore, reportsStore, type Doctor, type StoredReport } from "@/data/store";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,47 +14,45 @@ export default function ReportRoute() {
 
 function ReportPage() {
   const { id } = useParams<{ id: string }>();
-  const [report, setReport] = useState<any>(null);
+  const [report, setReport] = useState<StoredReport | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
-    (async () => {
-      const { data } = await supabase.from("symptom_reports").select("*").eq("id", id).maybeSingle();
-      setReport(data);
-      if (data) {
-        const docs = doctorsStore.list();
-        const specialist = (data.specialist || "").toLowerCase();
-        const symptoms = (data.symptoms || "").toLowerCase();
-        const conditionNames = ((data.conditions as any[]) || []).map(c => (c.name || "").toLowerCase()).join(" ");
-        const haystack = `${specialist} ${symptoms} ${conditionNames}`;
+    const data = reportsStore.findById(id) ?? null;
+    setReport(data);
+    if (data) {
+      const docs = doctorsStore.list();
+      const specialist = (data.specialist || "").toLowerCase();
+      const symptoms = (data.symptoms || "").toLowerCase();
+      const conditionNames = ((data.conditions as any[]) || []).map(c => (c.name || "").toLowerCase()).join(" ");
+      const haystack = `${specialist} ${symptoms} ${conditionNames}`;
 
-        const scored = docs
-          .map(d => {
-            const spec = (d.specialization || "").toLowerCase();
-            let score = 0;
-            for (const word of spec.split(/[\s,/-]+/).filter(w => w.length > 2)) {
-              if (haystack.includes(word)) score += 2;
-            }
-            if (spec && haystack.includes(spec)) score += 3;
-            return { d, score };
-          })
-          .filter(x => x.score > 0)
-          .sort((a, b) => b.score - a.score)
-          .map(x => x.d);
+      const scored = docs
+        .map(d => {
+          const spec = (d.specialization || "").toLowerCase();
+          let score = 0;
+          for (const word of spec.split(/[\s,/-]+/).filter(w => w.length > 2)) {
+            if (haystack.includes(word)) score += 2;
+          }
+          if (spec && haystack.includes(spec)) score += 3;
+          return { d, score };
+        })
+        .filter(x => x.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .map(x => x.d);
 
-        let matched = scored.slice(0, 4);
-        if (matched.length === 0) {
-          matched = docs.filter(d => {
-            const s = (d.specialization || "").toLowerCase();
-            return s.includes("general") || s.includes("mbbs") || s.includes("physician") || s.includes("family");
-          }).slice(0, 4);
-        }
-        setDoctors(matched);
+      let matched = scored.slice(0, 4);
+      if (matched.length === 0) {
+        matched = docs.filter(d => {
+          const s = (d.specialization || "").toLowerCase();
+          return s.includes("general") || s.includes("mbbs") || s.includes("physician") || s.includes("family");
+        }).slice(0, 4);
       }
-      setLoading(false);
-    })();
+      setDoctors(matched);
+    }
+    setLoading(false);
   }, [id]);
 
   if (loading) return <div className="flex justify-center p-12"><div className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;

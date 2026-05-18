@@ -3,6 +3,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { reportsStore } from "@/data/store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,13 +44,11 @@ function SymptomChecker() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("symptom-analyze", {
-        body: parsed.data,
-      });
+      const { data, error } = await supabase.functions.invoke("symptom-analyze", { body: parsed.data });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      const { data: inserted, error: insErr } = await supabase.from("symptom_reports").insert({
+      const inserted = reportsStore.add({
         user_id: user.id,
         symptoms: parsed.data.symptoms,
         age: parsed.data.age,
@@ -61,8 +60,7 @@ function SymptomChecker() {
         specialist: data.specialist,
         medicines: data.medicines,
         advice: data.advice,
-      }).select().single();
-      if (insErr) throw insErr;
+      });
       toast.success("Analysis complete");
       navigate(`/report/${inserted.id}`);
     } catch (err: any) {
